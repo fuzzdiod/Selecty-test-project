@@ -2,7 +2,7 @@ package service;
 
 
 import com.sun.net.httpserver.Request;
-import model.ResponseExternalSearchDto;
+import dto.ResponseExternalSearchDto;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package model;
+package dto;
 
 public class ResponseExternalSearchDto {
     private String message;
