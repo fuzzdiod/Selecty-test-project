@@ -7,20 +7,25 @@ import dto.ResponseExternalSearchDto;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public class InternalSearchService {
     private final ExternalSearchService externalSearchService;
-    private final static List<String> BD_INDEX = List.of("0", "1", "2");
+    private final Executor executor;
+    private final static List<String> BD_INDEXES = List.of("0", "1", "2");
     private final static String NOT_FOUND = "NOT_FOUND";
     private final static String EXCEPTION_MESSAGE = "FAILED_PRECONDITION";
 
-    public InternalSearchService(ExternalSearchService externalSearchService) {
+    public InternalSearchService(ExternalSearchService externalSearchService, Executor executor) {
         this.externalSearchService = externalSearchService;
+        this.executor = executor;
     }
 
     public String internalSearch(Request searchRequest) {
-        List<ResponseExternalSearchDto> externalSearchDtoList = BD_INDEX.stream()
-            .map(index -> CompletableFuture.supplyAsync(() -> executeCall(index, searchRequest)))
+        List<CompletableFuture<ResponseExternalSearchDto>> futures = BD_INDEXES.stream()
+            .map(index -> CompletableFuture.supplyAsync(() -> executeCall(index, searchRequest), executor))
+            .toList();
+        List<ResponseExternalSearchDto> externalSearchDtoList = futures.stream()
             .map(CompletableFuture::join)
             .toList();
         if (externalSearchDtoList.stream()
@@ -32,7 +37,7 @@ public class InternalSearchService {
             .filter(responseExternalSearchDto -> !responseExternalSearchDto.isEmpty() && responseExternalSearchDto.getMessage() != null)
             .map(ResponseExternalSearchDto::getMessage)
             .findFirst();
-        if (response.isPresent()){
+        if (response.isPresent()) {
             return response.get();
         }
         throw new RuntimeException(EXCEPTION_MESSAGE);
